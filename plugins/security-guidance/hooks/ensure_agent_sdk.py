@@ -124,10 +124,20 @@ def main() -> tuple[int, str, str]:
         # the user's machine, pip's own default registry applies — that's the same
         # exposure the user would have running `pip install` themselves, so
         # we're not widening the supply-chain surface.
+        #
+        # --prefer-binary: on ARM64 Windows, pip's default resolver picks a
+        # `cryptography` version with no published binary wheel and tries to
+        # build from source, which needs Rust/Cargo (almost never present
+        # on user machines). The build fails and the whole bootstrap returns
+        # BUILD_FAILED. A binary wheel exists on PyPI for an adjacent
+        # version (`cryptography-46.0.3-cp311-abi3-win_arm64.whl`);
+        # --prefer-binary tells pip to pick it. Cross-platform safe: no-op
+        # on platforms where the latest version already has a wheel.
         err_phase = "pip"
         subprocess.run(
             [str(venv_py), "-m", "pip", "install", "--quiet",
-             "--disable-pip-version-check", "claude-agent-sdk"],
+             "--disable-pip-version-check", "--prefer-binary",
+             "claude-agent-sdk"],
             capture_output=True, timeout=120, check=True,
         )
         return BUILT, "", ""
